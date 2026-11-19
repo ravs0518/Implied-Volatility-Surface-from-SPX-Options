@@ -15,6 +15,7 @@ from svi import SliceData
 @dataclass(frozen=True)
 class SliceCriteria:
     min_dte: float = 7.0
+    max_dte: float = 365.0
     max_relative_spread: float = 0.5
     # Five parameters need comfortably more than five quotes to be identified.
     min_quotes: int = 8
@@ -80,7 +81,7 @@ def prepare_slice(chain: pd.DataFrame, criteria: SliceCriteria = DEFAULT_CRITERI
 
 
 def prepare_slices(day: pd.DataFrame, criteria: SliceCriteria = DEFAULT_CRITERIA) -> list[SliceData]:
-    """Slices for every expiry at least criteria.min_dte days out, shortest first."""
-    long_enough = day[day["dte"] >= criteria.min_dte]
+    """Slices for expiries within the requested DTE range, shortest first."""
+    long_enough = day[(day["dte"] >= criteria.min_dte) & (day["dte"] <= criteria.max_dte)]
     slices = (prepare_slice(chain, criteria) for _, chain in long_enough.groupby("expire_date"))
     return sorted((s for s in slices if s is not None), key=lambda s: s.T)
